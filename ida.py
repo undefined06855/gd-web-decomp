@@ -94,12 +94,12 @@ def get_assembly(func_ea):
 
 
 func_count = sum(1 for _ in idautils.Functions())
-print(f"~~~{func_count}")
+print(f"!~~{func_count}")
 
 for ea in idautils.Functions():
     f = ida_funcs.get_func(ea)
     print(f"""
-        ~~~{
+        !~~{
             json.dumps({
                 "start": f.start_ea,
                 "end": f.end_ea,

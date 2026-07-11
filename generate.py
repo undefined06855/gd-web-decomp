@@ -33,8 +33,8 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
             pathlib.Path(os.environ["IDA_DIRECTORY"]).joinpath("idat"),
             "-A",  # autonomous mode
             # "-c", # re-disassemble
-            # "-Lida.log",  # logfile
-            "-v",
+            "-Lida.log",  # logfile
+            "-v", # verbose
             f'-S"{pathlib.Path("./ida.py").absolute()}" {pathlib.Path("./").absolute()} {pathlib.Path(sysconfig.get_path("purelib")).absolute()}',  # launch script
             path.absolute(),
         ],
@@ -55,22 +55,29 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
 
     for line in process.stdout:
         line = line.strip()
-        if not line.startswith("~~~"):
+        if not line.startswith("!~~"):
             continue
 
-        line = line.lstrip("~")
+        line = line.lstrip("!~")
 
-        if is_first_line:
-            is_first_line = False
-            pbar = tqdm.tqdm(total=int(line))
-            continue
+        try:
+            if is_first_line:
+                is_first_line = False
+                pbar = tqdm.tqdm(total=int(line))
+                continue
 
-        if not pbar:
-            print("no progress bar")
-            return None
+            if not pbar:
+                print("no progress bar")
+                return None
 
-        res.functions.append(BinaryFunction(json.loads(line)))
-        pbar.update()
+            res.functions.append(BinaryFunction(json.loads(line)))
+            pbar.update()
+        except json.decoder.JSONDecodeError:
+            print(f"Failed to parse json: {line}")
+            break
+        except ValueError:
+            print(f"Failed to parse string: {line}")
+            break
 
     process.wait()
 
