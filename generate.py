@@ -31,7 +31,9 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
 
     # TODO: is there a better way to do this?
     bromaida_blacklist = [
-        "fmod.dll"
+        "fmod.dll",
+        "libfmod-32.so",
+        "libfmod-64.so",
     ]
 
     invoke_bromaida = True
