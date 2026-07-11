@@ -1,8 +1,8 @@
-import distutils.sysconfig
 import json
 import os
 import pathlib
 import subprocess
+import sysconfig
 import time
 
 import dotenv
@@ -35,7 +35,7 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
             # "-c", # re-disassemble
             # "-Lida.log",  # logfile
             "-v",
-            f'-S"{pathlib.Path("./ida.py").absolute()}" {pathlib.Path("./").absolute()} {pathlib.Path(distutils.sysconfig.get_python_lib()).absolute()}',  # launch script
+            f'-S"{pathlib.Path("./ida.py").absolute()}" {pathlib.Path("./").absolute()} {pathlib.Path(sysconfig.get_path("purelib")).absolute()}',  # launch script
             path.absolute(),
         ],
         stdout=subprocess.PIPE,
