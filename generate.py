@@ -34,6 +34,7 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
         "fmod.dll",
         "libfmod-32.so",
         "libfmod-64.so",
+        "libExtensions.dll"
     ]
 
     invoke_bromaida = True
