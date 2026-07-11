@@ -3,11 +3,12 @@ import os
 import pathlib
 import sys
 import zipfile
+import idc
 
 import requests
 
-cwd = pathlib.Path(sys.argv[1])
-sys.path.insert(0, sys.argv[2])
+cwd = pathlib.Path(idc.ARGV[1])
+sys.path.insert(0, idc.ARGV[2])
 
 bida_path = cwd / "./bromaida"
 if not bida_path.exists():
@@ -32,7 +33,6 @@ if not bida_path.exists():
 
     inner_dir.rmdir()
 
-sys.path.insert(0, sys.argv[2])
 sys.path.insert(0, str(bida_path.absolute()))
 
 import json
@@ -44,7 +44,6 @@ import ida_hexrays
 import ida_lines
 import idaapi
 import idautils
-import idc
 from broma_ida.broma.importer import BromaImporter
 from broma_ida.data.data_manager import DataManager
 from broma_ida.utils import IDAUtils
@@ -108,6 +107,6 @@ for ea in idautils.Functions():
                 "assembly": get_assembly(ea),
             })
         }
-    """)
+    """.replace("\n", ""))
 
 idc.qexit(0)

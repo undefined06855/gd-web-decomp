@@ -35,8 +35,9 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
             # "-c", # re-disassemble
             "-Lida.log",  # logfile
             "-v", # verbose
-            f'-S"{pathlib.Path("./ida.py").absolute()}" {pathlib.Path("./").absolute()} {pathlib.Path(sysconfig.get_path("purelib")).absolute()}',  # launch script
-            path.absolute(),
+            # ida.py <cwd> <venv lib path>
+            f'-S"{pathlib.Path("./ida.py").absolute()}" "{pathlib.Path("./").absolute()}" "{pathlib.Path(sysconfig.get_path("purelib")).absolute()}""',  # launch script
+            f"{path.absolute()}",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
