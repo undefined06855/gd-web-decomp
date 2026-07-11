@@ -109,7 +109,7 @@ def run_for_one_binary(path: pathlib.Path):
             file_name = write_output_files(path, json.loads(line))
 
             pbar.update()
-            pbar.set_description(f"Parsed {file_name}")
+            pbar.set_description(f"Parsed {file_name}") # not really what this is meant for but it works
         except json.decoder.JSONDecodeError:
             print(f"Failed to parse json: {line}")
             break
@@ -120,6 +120,7 @@ def run_for_one_binary(path: pathlib.Path):
     process.wait()
 
     if pbar:
+        pbar.set_description(f"Parsing {path.name}")
         pbar.close()
 
     # for line in process.stderr:
