@@ -35,6 +35,7 @@ def write_output_files(binary_path: pathlib.Path, json_data):
 
     file_safe_name: str = json_data["name"]
     file_safe_name = re.sub(r"[?@:<>,*&~]", "_", file_safe_name)
+    file_safe_name = file_safe_name[:100]
 
     cpp_path = output_path / f"{file_safe_name}.cpp"
     asm_path = output_path / f"{file_safe_name}.asm"
