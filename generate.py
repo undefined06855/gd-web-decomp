@@ -100,7 +100,7 @@ def run_for_all_binaries() -> str:
         if file.is_dir():
             continue
 
-        extension_blacklist = [ ".id0", ".id1", ".id2", ".nam", ".til" ]
+        extension_blacklist = [ ".id0", ".id1", ".id2", ".nam", ".til", "$$$", ".i64", ".idb" ]
         for extension in extension_blacklist:
             if file.name.endswith(extension):
                 continue
