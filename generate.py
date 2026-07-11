@@ -29,10 +29,6 @@ def generate_prefix(json_data):
     ret += "// \n"
 
     # TODO: make this better
-    if byte_len < 14:
-        ret += "// This function may be unhookable on x64!! (size < 14)\n"
-    if byte_len < 5:
-        ret += "// This function may be unhookable on x86!! (size < 5)\n"
     if byte_len < 16:
         ret += "// This function may be unhookable on ARM64!! (size < 16)\n"
     if byte_len < 8:
