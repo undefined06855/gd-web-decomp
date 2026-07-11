@@ -3,8 +3,10 @@ import json
 import os
 import pathlib
 import subprocess
+import time
 
 import dotenv
+import humanfriendly
 import jsonpickle
 import tqdm
 
@@ -108,7 +110,11 @@ def run_for_all_binaries() -> str:
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
+    start = time.perf_counter()
+
     with open(pathlib.Path("./output.json"), "w") as output:
         output.write(run_for_all_binaries())
 
-    print("Done!")
+    end = time.perf_counter()
+
+    print(f"Done! Took {humanfriendly.format_timespan(end - start)}!")

@@ -8,6 +8,8 @@ certifi==2026.6.17
     # via requests
 charset-normalizer==3.4.9
     # via requests
+humanfriendly==10.0
+    # via -r requirements.in
 idna==3.18
     # via requests
 jsonpickle==4.1.2
