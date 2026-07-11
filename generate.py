@@ -119,6 +119,10 @@ def run_for_all_binaries() -> str:
                 print(f"Removing {file.name}...")
                 file.unlink()
 
+    # clear ida log
+    with open(pathlib.Path("./ida.log"), "w") as log:
+        log.write("")
+
     for file in pathlib.Path("./binaries").iterdir():
         if file.is_dir():
             continue
