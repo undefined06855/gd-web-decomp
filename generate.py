@@ -14,15 +14,29 @@ import tqdm
 def generate_prefix(json_data):
     ret = ""
 
+    byte_len = json_data["end"] - json_data["start"]
+
     ret += "// \n"
 
-    ret += f"// {json_data["name"]} from {hex(json_data["start"])} to {hex(json_data["end"])} ({json_data["end"] - json_data["start"]} bytes)\n"
+    ret += f"// {json_data["name"]} from {hex(json_data["start"])} to {hex(json_data["end"])} ({byte_len} bytes)\n"
 
     ret += "// \n"
 
     ret += f"// {len(json_data["xrefs"])} xrefs:\n"
     for xref in json_data["xrefs"]:
         ret += f"// > {xref}\n"
+
+    ret += "// \n"
+
+    # TODO: make this better
+    if byte_len < 14:
+        ret += "// This function may be unhookable on x64!! (size < 14)\n"
+    if byte_len < 5:
+        ret += "// This function may be unhookable on x86!! (size < 5)\n"
+    if byte_len < 16:
+        ret += "// This function may be unhookable on ARM64!! (size < 16)\n"
+    if byte_len < 8:
+        ret += "// This function may be unhookable on ARM32!! (size < 8)\n"
 
     ret += "// \n"
 

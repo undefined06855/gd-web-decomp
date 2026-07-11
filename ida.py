@@ -123,6 +123,7 @@ print(f"!~~{func_count}")
 
 for ea in idautils.Functions():
     f = ida_funcs.get_func(ea)
+    # TODO: return if this is an objc function (and then change file extension)
     print(f"""
         !~~{
             json.dumps({
