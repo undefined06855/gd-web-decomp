@@ -96,14 +96,14 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
 
     process.wait()
 
-    for line in process.stderr:
-        line = line.strip()
-        if line == "":
-            continue
+    # for line in process.stderr:
+    #     line = line.strip()
+    #     if line == "":
+    #         continue
 
-        print("Error from IDA:")
-        print("\n    ".join(process.stderr.readlines()))
-        return None
+    #     print("Error from IDA:")
+    #     print("\n    ".join(process.stderr.readlines()))
+    #     return None
 
     return res
 
