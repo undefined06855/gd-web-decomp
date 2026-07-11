@@ -50,7 +50,7 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
             "-Lida.log",  # logfile
             "-v", # verbose
             # ida.py <cwd> <venv lib path> <invoke bromaida?>
-            f'-S" "{pathlib.Path("./ida.py").absolute()}" "{pathlib.Path("./").absolute()}" "{pathlib.Path(sysconfig.get_path("purelib")).absolute()}" "{"True" if invoke_bromaida else "False"}" "',  # launch script
+            f'-S"{pathlib.Path("./ida.py").absolute()}" "{pathlib.Path("./").absolute()}" "{pathlib.Path(sysconfig.get_path("purelib")).absolute()}" "{"True" if invoke_bromaida else "False"}"',  # launch script
             f"{path.absolute()}",
         ],
         stdout=subprocess.PIPE,
@@ -111,14 +111,17 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
 def run_for_all_binaries() -> str:
     output: dict[str, Binary] = {}
 
+    extension_blacklist = [ ".id0", ".id1", ".id2", ".nam", ".til", "$$$", ".i64", ".idb" ]
+
+    for file in pathlib.Path("./binaries").iterdir():
+        for extension in extension_blacklist:
+            if file.name.endswith(extension):
+                print(f"Removing {file.name}...")
+                file.unlink()
+
     for file in pathlib.Path("./binaries").iterdir():
         if file.is_dir():
             continue
-
-        extension_blacklist = [ ".id0", ".id1", ".id2", ".nam", ".til", "$$$", ".i64", ".idb" ]
-        for extension in extension_blacklist:
-            if file.name.endswith(extension):
-                continue
 
         res = run_for_one_binary(file)
         if not res:
