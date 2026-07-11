@@ -1,0 +1,7 @@
+binaries/
+venv/
+bromaida/
+output/
+
+ida.log
+output.json
