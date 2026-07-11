@@ -123,7 +123,8 @@ def run_for_all_binaries() -> str:
     with open(pathlib.Path("./ida.log"), "w") as log:
         log.write("")
 
-    for file in pathlib.Path("./binaries").iterdir():
+    files = [ file for file in pathlib.Path("./binaries").iterdir() ]
+    for file in files:
         if file.is_dir():
             continue
 
