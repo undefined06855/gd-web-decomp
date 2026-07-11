@@ -2,5 +2,4 @@ python-dotenv
 requests
 git+https://github.com/Prevter/PyBroma.git
 tqdm
-jsonpickle
 humanfriendly

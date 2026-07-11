@@ -3,8 +3,8 @@ import os
 import pathlib
 import sys
 import zipfile
-import idc
 
+import idc
 import requests
 
 cwd = pathlib.Path(idc.ARGV[1])
@@ -73,13 +73,14 @@ if should_invoke_bromaida:
 else:
     print("Skipping BromaIDA for this file...")
 
+
 def get_pseudocode(func_ea):
     if not ida_hexrays.init_hexrays_plugin():
         return None
 
     cfunc = ida_hexrays.decompile(func_ea)
     if not cfunc:
-        return None
+        return "// Failed to decompile!"
 
     return "\n".join(ida_lines.tag_remove(line.line) for line in cfunc.get_pseudocode())
 
@@ -101,6 +102,22 @@ def get_assembly(func_ea):
     return "\n".join(lines)
 
 
+def get_xrefs(func_ea):
+    refs = []
+
+    for xref in idautils.XrefsTo(func_ea):
+        caller = ida_funcs.get_func(xref.frm)  # pyright: ignore[reportAttributeAccessIssue]
+
+        if caller:
+            refs.append(
+                f"{ida_funcs.get_func_name(caller.start_ea)} @ {hex(xref.frm)}"
+            )  # pyright: ignore[reportAttributeAccessIssue]
+        else:
+            refs.append(f"<???> @ {hex(xref.frm)}")  # pyright: ignore[reportAttributeAccessIssue]
+
+    return refs
+
+
 func_count = sum(1 for _ in idautils.Functions())
 print(f"!~~{func_count}")
 
@@ -114,6 +131,7 @@ for ea in idautils.Functions():
                 "name": ida_funcs.get_func_name(ea),
                 "pseudocode": get_pseudocode(ea),
                 "assembly": get_assembly(ea),
+                "xrefs": get_xrefs(ea),
             })
         }
     """.replace("\n", ""))

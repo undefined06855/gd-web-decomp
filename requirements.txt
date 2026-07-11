@@ -12,8 +12,6 @@ humanfriendly==10.0
     # via -r requirements.in
 idna==3.18
     # via requests
-jsonpickle==4.1.2
-    # via -r requirements.in
 pybroma @ git+https://github.com/Prevter/PyBroma.git
     # via -r requirements.in
 python-dotenv==1.2.2
