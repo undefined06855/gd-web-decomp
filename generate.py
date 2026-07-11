@@ -28,6 +28,18 @@ class Binary:
 
 def run_for_one_binary(path: pathlib.Path) -> Binary | None:
     print(f"Running for {path.absolute()}")
+
+    # TODO: is there a better way to do this?
+    bromaida_blacklist = [
+        "fmod.dll"
+    ]
+
+    invoke_bromaida = True
+    for filename in bromaida_blacklist:
+        if path.name == filename:
+            invoke_bromaida = False
+            break
+
     process = subprocess.Popen(
         [
             pathlib.Path(os.environ["IDA_DIRECTORY"]).joinpath("idat"),
@@ -35,8 +47,8 @@ def run_for_one_binary(path: pathlib.Path) -> Binary | None:
             # "-c", # re-disassemble
             "-Lida.log",  # logfile
             "-v", # verbose
-            # ida.py <cwd> <venv lib path>
-            f'-S"{pathlib.Path("./ida.py").absolute()}" "{pathlib.Path("./").absolute()}" "{pathlib.Path(sysconfig.get_path("purelib")).absolute()}""',  # launch script
+            # ida.py <cwd> <venv lib path> <invoke bromaida?>
+            f'-S" "{pathlib.Path("./ida.py").absolute()}" "{pathlib.Path("./").absolute()}" "{pathlib.Path(sysconfig.get_path("purelib")).absolute()}" "{"True" if invoke_bromaida else "False"}" "',  # launch script
             f"{path.absolute()}",
         ],
         stdout=subprocess.PIPE,

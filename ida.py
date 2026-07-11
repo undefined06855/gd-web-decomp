@@ -9,6 +9,7 @@ import requests
 
 cwd = pathlib.Path(idc.ARGV[1])
 sys.path.insert(0, idc.ARGV[2])
+should_invoke_bromaida = idc.ARGV[3] == "True"
 
 bida_path = cwd / "./bromaida"
 if not bida_path.exists():
@@ -53,16 +54,18 @@ dotenv.load_dotenv(cwd / ".env")
 print("Waiting for IDA to do its shit...")
 ida_auto.auto_wait()
 
-# usage taken from bromaida
-print("Loading DataManager...")
-DataManager().init(bida_path / "broma_ida" / "shelf")
+if should_invoke_bromaida:
+    # usage taken from bromaida
+    print("Loading DataManager...")
+    DataManager().init(bida_path / "broma_ida" / "shelf")
 
-# usage also taken from bromaida
-print("Invoking BromaImporter...")
-broma_importer = BromaImporter(IDAUtils.get_platform(), pathlib.Path(os.environ["BINDINGS_PATH"]))
-broma_importer.parse_bromas()
-broma_importer.import_into_idb()
-
+    # usage also taken from bromaida
+    print("Invoking BromaImporter...")
+    broma_importer = BromaImporter(IDAUtils.get_platform(), pathlib.Path(os.environ["BINDINGS_PATH"]))
+    broma_importer.parse_bromas()
+    broma_importer.import_into_idb()
+else:
+    print("Skipping BromaIDA for this file...")
 
 def get_pseudocode(func_ea):
     if not ida_hexrays.init_hexrays_plugin():
