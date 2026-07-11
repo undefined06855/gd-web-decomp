@@ -58,6 +58,12 @@ if should_invoke_bromaida:
     # usage taken from bromaida
     print("Loading DataManager...")
     DataManager().init(bida_path / "broma_ida" / "shelf")
+    DataManager().set("always_overwrite_merge_information", True)
+    DataManager().set("disable_broma_hash_check", True)
+    DataManager().set("always_overwrite_idb", True)
+    DataManager().set("import_types", True)
+    DataManager().set("set_default_parser_args", True)
+    DataManager().set("ignore_mismatched_structs", True)
 
     # usage also taken from bromaida
     print("Invoking BromaImporter...")
