@@ -1,6 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "/home/undefined0/things/ida-pro-9.3/python",
-        "/home/undefined0/projects/BromaIDA/"
-    ]
-}
