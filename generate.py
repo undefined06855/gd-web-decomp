@@ -63,7 +63,8 @@ def write_output_files(binary_path: pathlib.Path, json_data):
     return json_data["name"]
 
 
-def run_for_one_binary(path: pathlib.Path):
+# returns if the binary successfully parsed or not
+def run_for_one_binary(path: pathlib.Path) -> bool:
     print(f"Running for {path.absolute()}")
 
     # TODO: is there a better way to do this?
@@ -87,14 +88,14 @@ def run_for_one_binary(path: pathlib.Path):
             f"{path.absolute()}",
         ],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
     )
 
     # for type checking
-    if not process.stdout or not process.stderr:
-        return
+    if not process.stdout:
+        return False
 
     is_first_line = True
     pbar: tqdm.tqdm | None = None
@@ -114,18 +115,20 @@ def run_for_one_binary(path: pathlib.Path):
 
             if not pbar:
                 print("no progress bar")
-                return
+                return False
 
             file_name = write_output_files(path, json.loads(line))
 
             pbar.update()
-            pbar.set_description(f"Parsed {file_name}") # not really what this is meant for but it works
+            pbar.set_description(f"Parsed {file_name}")  # not really what this is meant for but it works
         except json.decoder.JSONDecodeError:
             print(f"Failed to parse json: {line}")
-            break
+            process.kill()
+            return False
         except ValueError:
             print(f"Failed to parse string: {line}")
-            break
+            process.kill()
+            return False
 
     process.wait()
 
@@ -133,20 +136,17 @@ def run_for_one_binary(path: pathlib.Path):
         pbar.set_description(f"Parsing {path.name}")
         pbar.close()
 
-    # for line in process.stderr:
-    #     line = line.strip()
-    #     if line == "":
-    #         continue
-
-    #     print("Error from IDA:")
-    #     print("\n    ".join(process.stderr.readlines()))
-    #     return None
+    return True
 
 
-def run_for_all_binaries():
-    # clear any ida databases or half-complete databases so we dont parse them by accident
-    extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$", ".i64", ".idb"]
-    for file in pathlib.Path("./binaries").iterdir():
+# returns the failed binary names
+def run_for_all_binaries() -> list[str]:
+    # clear any half-complete databases so we dont parse them by accident
+    extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$"]
+    extension_do_not_iter_list = [".i64", ".idb"]
+
+    files = [file for file in pathlib.Path("./binaries").iterdir()]
+    for file in files:
         for extension in extension_blacklist:
             if file.name.endswith(extension):
                 print(f"Removing {file.name}...")
@@ -156,12 +156,21 @@ def run_for_all_binaries():
     with open(pathlib.Path("./ida.log"), "w") as log:
         log.write("")
 
+    failed_files = []
     files = [file for file in pathlib.Path("./binaries").iterdir()]
     for file in files:
         if file.is_dir():
             continue
 
-        run_for_one_binary(file)
+        for extension in extension_do_not_iter_list:
+            if file.name.endswith(extension):
+                continue
+
+        success = run_for_one_binary(file)
+        if not success:
+            failed_files.append(file.name)
+
+    return failed_files
 
 
 if __name__ == "__main__":
@@ -169,8 +178,13 @@ if __name__ == "__main__":
 
     start = time.perf_counter()
 
-    run_for_all_binaries()
+    failed_files = run_for_all_binaries()
 
     end = time.perf_counter()
 
     print(f"Done! Took {humanfriendly.format_timespan(end - start)}!")
+
+    if len(failed_files) > 0:
+        print(f"{len(failed_files)} files failed to be parsed!")
+        for file in failed_files:
+            print(f" - {file}")

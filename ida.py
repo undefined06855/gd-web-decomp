@@ -106,14 +106,14 @@ def get_xrefs(func_ea):
     refs = []
 
     for xref in idautils.XrefsTo(func_ea):
-        caller = ida_funcs.get_func(xref.frm)  # pyright: ignore[reportAttributeAccessIssue]
+        frm = xref.frm  # pyright: ignore[reportAttributeAccessIssue]
+
+        caller = ida_funcs.get_func(frm)
 
         if caller:
-            refs.append(
-                f"{ida_funcs.get_func_name(caller.start_ea)} @ {hex(xref.frm)}"
-            )  # pyright: ignore[reportAttributeAccessIssue]
+            refs.append(f"{ida_funcs.get_func_name(caller.start_ea)} @ {hex(frm)}")
         else:
-            refs.append(f"<???> @ {hex(xref.frm)}")  # pyright: ignore[reportAttributeAccessIssue]
+            refs.append(f"<???> @ {hex(frm)}")
 
     return refs
 
@@ -135,6 +135,6 @@ for ea in idautils.Functions():
                 "xrefs": get_xrefs(ea),
             })
         }
-    """.replace("\n", ""))
+    """.replace("\n", "").strip())
 
 idc.qexit(0)
