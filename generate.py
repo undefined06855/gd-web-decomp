@@ -162,9 +162,14 @@ def run_for_all_binaries() -> list[str]:
         if file.is_dir():
             continue
 
+        do_not_parse = False
         for extension in extension_do_not_iter_list:
             if file.name.endswith(extension):
-                continue
+                do_not_parse = True
+                break
+
+        if do_not_parse:
+            continue
 
         success = run_for_one_binary(file)
         if not success:
