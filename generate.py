@@ -5,6 +5,7 @@ import re
 import subprocess
 import sysconfig
 import time
+import sys
 
 import dotenv
 import humanfriendly
@@ -105,6 +106,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
         if not line.startswith("!~~"):
             continue
 
+        # sorry to the people (me) with fonts that turn this into some fucked up ligature
         line = line.lstrip("!~")
 
         try:
@@ -138,27 +140,15 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
 
     return True
 
-
-# returns the failed binary names
-def run_for_all_binaries() -> list[str]:
-    # clear any half-complete databases so we dont parse them by accident
-    extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$"]
+def run_for_binaries(binaries: list[pathlib.Path]) -> list[str]:
     extension_do_not_iter_list = [".i64", ".idb"]
-
-    files = [file for file in pathlib.Path("./binaries").iterdir()]
-    for file in files:
-        for extension in extension_blacklist:
-            if file.name.endswith(extension):
-                print(f"Removing {file.name}...")
-                file.unlink()
+    failed_files = []
 
     # clear ida log
     with open(pathlib.Path("./ida.log"), "w") as log:
         log.write("")
 
-    failed_files = []
-    files = [file for file in pathlib.Path("./binaries").iterdir()]
-    for file in files:
+    for file in binaries:
         if file.is_dir():
             continue
 
@@ -177,13 +167,33 @@ def run_for_all_binaries() -> list[str]:
 
     return failed_files
 
+# returns the failed binary names
+def run_for_all_binaries() -> list[str]:
+    # clear any half-complete databases so we dont parse them by accident
+    extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$"]
+
+    files = [file for file in pathlib.Path("./binaries").iterdir()]
+    for file in files:
+        for extension in extension_blacklist:
+            if file.name.endswith(extension):
+                print(f"Removing {file.name}...")
+                file.unlink()
+
+    return run_for_binaries([file for file in pathlib.Path("./binaries").iterdir()])
+
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
     start = time.perf_counter()
 
-    failed_files = run_for_all_binaries()
+    failed_files = []
+
+    if len(sys.argv) != 1:
+        sys.argv.pop(0)
+        failed_files = run_for_binaries([ pathlib.Path(f"./binaries/{file}") for file in sys.argv ])
+    else:
+        failed_files = run_for_all_binaries()
 
     end = time.perf_counter()
 

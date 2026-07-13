@@ -18,8 +18,11 @@ An online viewer for Geometry Dash's decompiled source code. Requires IDA Pro to
     BINDINGS_PATH=/your/bindings/directory/bindings/2.2081
     ```
     (or just set the environment variables)
-1. Run `generate.py`, then wait. Quite a long time. (each binary takes around 10 to 20 minutes on my 5900X)
-1. Run `bun i` to install packages, and `bun serve` to run the server!
+1. Create a binaries/ directory, and place your binaries into it (if you are in the Geode SDK server, check [Own The Libs](https://discord.com/channels/911701438269386882/1463361744788525080))
+1. Run `generate.py`, then wait. Quite a long time. (analysing 10 binaries took around 3 hours on my 5900X)
+1. ~~Run `bun i` to install packages, and `bun serve` to run the server!~~
+
+(You can also pass names of binaries to analyse individual binaries, for testing, e.g. `python generate.py GeometryJump GeometryDash.exe "Geometry Dash"`)
 
 ## Contributing
 
