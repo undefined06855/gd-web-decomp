@@ -1,12 +1,12 @@
 import json
 import os
 import pathlib
+import random
 import re
 import subprocess
+import sys
 import sysconfig
 import time
-import sys
-import random
 
 import dotenv
 import humanfriendly
@@ -17,6 +17,7 @@ HEXRAYS_CONFIG = """
 MAX_FUNCSIZE = 500000
 
 """.strip()
+
 
 # if this returns false the program should exit
 def setup_stuffs() -> bool:
@@ -58,6 +59,7 @@ def setup_stuffs() -> bool:
         log.write("")
 
     return True
+
 
 def generate_prefix(json_data):
     ret = ""
@@ -214,6 +216,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
 
     return True
 
+
 def run_for_binaries(binaries: list[pathlib.Path]) -> list[str]:
     extension_do_not_iter_list = [".i64", ".idb"]
     failed_files = []
@@ -241,6 +244,7 @@ def run_for_binaries(binaries: list[pathlib.Path]) -> list[str]:
 
     return failed_files
 
+
 # returns the failed binary names
 def run_for_all_binaries() -> list[str]:
     return run_for_binaries([file for file in pathlib.Path("./binaries").iterdir()])
@@ -258,7 +262,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 1:
         sys.argv.pop(0)
-        failed_files = run_for_binaries([ pathlib.Path(f"./binaries/{file}") for file in sys.argv ])
+        failed_files = run_for_binaries([pathlib.Path(f"./binaries/{file}") for file in sys.argv])
     else:
         failed_files = run_for_all_binaries()
 
