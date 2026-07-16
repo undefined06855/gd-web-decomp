@@ -34,7 +34,7 @@ if not bida_path.exists():
     [_, repo_name] = os.environ["BROMA_IDA_REPO"].split("/")
     inner_dir = bida_path / f"{repo_name}-{os.environ["BROMA_IDA_BRANCH"]}"
     for item in inner_dir.iterdir():
-        item.move(bida_path / item.name)
+        item.rename(bida_path / item.name)
 
     inner_dir.rmdir()
 
