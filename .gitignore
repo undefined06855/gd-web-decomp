@@ -3,6 +3,7 @@ venv/
 bromaida/
 output/
 
+fail-*.json
 ida.log
 .env
 .vscode/

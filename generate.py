@@ -6,11 +6,58 @@ import subprocess
 import sysconfig
 import time
 import sys
+import random
 
 import dotenv
 import humanfriendly
 import tqdm
 
+HEXRAYS_CONFIG = """
+
+MAX_FUNCSIZE = 500000
+
+""".strip()
+
+# if this returns false the program should exit
+def setup_stuffs() -> bool:
+    user_config_dir = None
+    if os.name == "nt":
+        user_config_dir = pathlib.Path.home() / "AppData/Roaming/Hex-Rays/IDA Pro/cfg"
+    else:
+        user_config_dir = pathlib.Path.home() / ".idapro/cfg"
+
+    hexrays_cfg_file = user_config_dir / "hexrays.cfg"
+    if hexrays_cfg_file.exists():
+        with open(hexrays_cfg_file) as config:
+            if config.read() != HEXRAYS_CONFIG:
+                print(f"Your IDA already has a user-local config file at {hexrays_cfg_file.absolute()}!")
+                print(f"Please (re)move this so that custom configs can be loaded.")
+                return False
+
+        hexrays_cfg_file.unlink()
+
+    user_config_dir.mkdir(parents=True, exist_ok=True)
+
+    # write custom config
+    with open(hexrays_cfg_file, "w") as config:
+        config.write(HEXRAYS_CONFIG)
+
+    print(f"Written custom config to {hexrays_cfg_file}, you might want to delete this afterwards!")
+
+    # clear any half-complete databases so we dont parse them by accident
+    extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$"]
+    files = [file for file in pathlib.Path("./binaries").iterdir()]
+    for file in files:
+        for extension in extension_blacklist:
+            if file.name.endswith(extension):
+                print(f"Removing {file.name}...")
+                file.unlink()
+
+    # clear ida log
+    with open(pathlib.Path("./ida.log"), "w") as log:
+        log.write("")
+
+    return True
 
 def generate_prefix(json_data):
     ret = ""
@@ -30,10 +77,20 @@ def generate_prefix(json_data):
     ret += "// \n"
 
     # TODO: make this better
+    unhookable = False
     if byte_len < 16:
         ret += "// This function may be unhookable on ARM64!! (size < 16)\n"
+        unhookable = True
     if byte_len < 8:
         ret += "// This function may be unhookable on ARM32!! (size < 8)\n"
+        unhookable = True
+
+    if not unhookable:
+        ret += "// This function is hookable on all platforms!\n"
+
+    ret += "// \n"
+
+    ret += f"// Using BromaIDA {json_data["bida_info"]}\n"
 
     ret += "// \n"
 
@@ -45,18 +102,26 @@ def write_output_files(binary_path: pathlib.Path, json_data):
     output_path.mkdir(parents=True, exist_ok=True)
 
     file_safe_name: str = json_data["name"]
+
+    # Fuck you
+    if file_safe_name.endswith("operator/"):
+        file_safe_name = file_safe_name[:-9] + "operator_div"
+
+    if file_safe_name.endswith("operator*"):
+        file_safe_name = file_safe_name[:-9] + "operator_mul"
+
     file_safe_name = re.sub(r"[?@:<>,*&~]", "_", file_safe_name)
     file_safe_name = file_safe_name[:100]
 
-    cpp_path = output_path / f"{file_safe_name}.cpp"
+    cpp_path = output_path / (f"{file_safe_name}{".mm" if json_data["is_objc"] else ".cpp"}")
     asm_path = output_path / f"{file_safe_name}.asm"
 
-    with open(cpp_path, "w") as source:
+    with open(cpp_path, "w", encoding="utf-8") as source:
         source.write(generate_prefix(json_data))
         source.write("\n")
         source.write(json_data["pseudocode"])
 
-    with open(asm_path, "w") as source:
+    with open(asm_path, "w", encoding="utf-8") as source:
         source.write(generate_prefix(json_data).replace("//", ";"))
         source.write("\n")
         source.write(json_data["assembly"])
@@ -89,7 +154,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
             f"{path.absolute()}",
         ],
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.DEVNULL,
         text=True,
         bufsize=1,
     )
@@ -98,37 +163,46 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
     if not process.stdout:
         return False
 
-    is_first_line = True
     pbar: tqdm.tqdm | None = None
 
     for line in process.stdout:
         line = line.strip()
-        if not line.startswith("!~~"):
+        if not line.startswith("[gdwd]"):
             continue
 
-        # sorry to the people (me) with fonts that turn this into some fucked up ligature
-        line = line.lstrip("!~")
+        line = line[6:]
+
+        if line.startswith(">"):
+            print(f"    {line[1:]}")
+            continue
 
         try:
-            if is_first_line:
-                is_first_line = False
-                pbar = tqdm.tqdm(total=int(line))
+            line_data = json.loads(line)
+
+            if line_data["type"] == "metadata":
+                pbar = tqdm.tqdm(total=line_data["func_count"])
                 continue
 
-            if not pbar:
-                print("no progress bar")
-                return False
+            if line_data["type"] == "func":
+                if not pbar:
+                    print("no progress bar")
+                    return False
 
-            file_name = write_output_files(path, json.loads(line))
+                file_name = write_output_files(path, line_data)
 
-            pbar.update()
-            pbar.set_description(f"Parsed {file_name}")  # not really what this is meant for but it works
-        except json.decoder.JSONDecodeError:
-            print(f"Failed to parse json: {line}")
-            process.kill()
-            return False
-        except ValueError:
-            print(f"Failed to parse string: {line}")
+                bar_description = f"{file_name.ljust(80)} | Analysing {path.name}"
+
+                pbar.set_description(bar_description)  # not really what this is meant for but it works
+                pbar.update()
+        except Exception as err:
+            print(f"Failed to parse {line[:30]}...")
+            print(err)
+
+            random_filename = random.randbytes(5).hex().rjust(5, "0")
+            print(f"Saving failed line to fail-{random_filename}.json, check that please!")
+            with open(pathlib.Path(f"./fail-{random_filename}.json"), "w") as file:
+                file.write(line)
+
             process.kill()
             return False
 
@@ -144,12 +218,12 @@ def run_for_binaries(binaries: list[pathlib.Path]) -> list[str]:
     extension_do_not_iter_list = [".i64", ".idb"]
     failed_files = []
 
-    # clear ida log
-    with open(pathlib.Path("./ida.log"), "w") as log:
-        log.write("")
-
     for file in binaries:
         if file.is_dir():
+            continue
+
+        if not file.exists():
+            print(f"{file} does not exist!")
             continue
 
         do_not_parse = False
@@ -169,21 +243,14 @@ def run_for_binaries(binaries: list[pathlib.Path]) -> list[str]:
 
 # returns the failed binary names
 def run_for_all_binaries() -> list[str]:
-    # clear any half-complete databases so we dont parse them by accident
-    extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$"]
-
-    files = [file for file in pathlib.Path("./binaries").iterdir()]
-    for file in files:
-        for extension in extension_blacklist:
-            if file.name.endswith(extension):
-                print(f"Removing {file.name}...")
-                file.unlink()
-
     return run_for_binaries([file for file in pathlib.Path("./binaries").iterdir()])
 
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
+
+    if not setup_stuffs():
+        exit(1)
 
     start = time.perf_counter()
 

@@ -11,14 +11,14 @@ cwd = pathlib.Path(idc.ARGV[1])
 sys.path.insert(0, idc.ARGV[2])
 should_invoke_bromaida = idc.ARGV[3] == "True"
 
+def print_prefixed(message):
+    os.write(1, f"\n[gdwd]{message}\n".encode())
+
 bida_path = cwd / "./bromaida"
 if not bida_path.exists():
-    print(f"Extracting BromaIDA from {os.environ["BROMA_IDA_REPO"]}@{os.environ["BROMA_IDA_BRANCH"]}...")
+    print_prefixed(f">Extracting BromaIDA from {os.environ["BROMA_IDA_REPO"]}@{os.environ["BROMA_IDA_BRANCH"]}...")
 
-    broma_ida_url = (
-        f"https://github.com/{os.environ["BROMA_IDA_REPO"]}/archive/refs/heads/{os.environ["BROMA_IDA_BRANCH"]}.zip"
-    )
-    res = requests.get(broma_ida_url)
+    res = requests.get(f"https://github.com/{os.environ["BROMA_IDA_REPO"]}/archive/refs/heads/{os.environ["BROMA_IDA_BRANCH"]}.zip")
     res.raise_for_status()
 
     bida_path.mkdir(exist_ok=True)
@@ -43,20 +43,26 @@ import ida_auto
 import ida_funcs
 import ida_hexrays
 import ida_lines
-import idaapi
+import ida_name
+import ida_pro
 import idautils
+import ida_bytes
 from broma_ida.broma.importer import BromaImporter
 from broma_ida.data.data_manager import DataManager
 from broma_ida.utils import IDAUtils
+from broma_ida.metadata import SCRIPT_VERSION, BROMAIDA_GITHUB
 
 dotenv.load_dotenv(cwd / ".env")
 
-print("Waiting for IDA to do its shit...")
+if not ida_hexrays.init_hexrays_plugin():
+    ida_pro.qexit(0)
+
+print_prefixed(">Waiting for IDA to do its shit...")
 ida_auto.auto_wait()
 
 if should_invoke_bromaida:
     # usage taken from bromaida
-    print("Loading DataManager...")
+    print_prefixed(">Loading DataManager...")
     DataManager().init(bida_path / "broma_ida" / "shelf")
     DataManager().set("always_overwrite_merge_information", True)
     DataManager().set("disable_broma_hash_check", True)
@@ -66,38 +72,55 @@ if should_invoke_bromaida:
     DataManager().set("ignore_mismatched_structs", True)
 
     # usage also taken from bromaida
-    print("Invoking BromaImporter...")
+    print_prefixed(">Invoking BromaImporter...")
     broma_importer = BromaImporter(IDAUtils.get_platform(), pathlib.Path(os.environ["BINDINGS_PATH"]))
     broma_importer.parse_bromas()
     broma_importer.import_into_idb()
 else:
-    print("Skipping BromaIDA for this file...")
+    print_prefixed(">Skipping BromaIDA for this file...")
 
+def get_func_name(func_ea):
+    maybe_mangled = ida_funcs.get_func_name(func_ea)
+
+    demangled = ida_name.demangle_name(maybe_mangled, ida_name.MNG_SHORT_FORM)
+    if demangled is None:
+        demangled = maybe_mangled
+    else:
+        # remove params that demangle_name gives us (only android will go down this route since it gives us mangled
+        # names)
+        demangled = demangled.split("(", 1)[0]
+
+    return demangled
 
 def get_pseudocode(func_ea):
-    if not ida_hexrays.init_hexrays_plugin():
-        return None
-
-    cfunc = ida_hexrays.decompile(func_ea)
-    if not cfunc:
+    decompiled_func = ida_hexrays.decompile(func_ea)
+    if decompiled_func is None:
         return "// Failed to decompile!"
 
-    return "\n".join(ida_lines.tag_remove(line.line) for line in cfunc.get_pseudocode())
+    lines = []
+    for sline in decompiled_func.get_pseudocode():
+        line = ida_lines.tag_remove(sline.line)
+        lines.append(line)
 
+    return "\n".join(lines)
 
 def get_assembly(func_ea):
-    f = ida_funcs.get_func(func_ea)
-    if not f:
+    func = ida_funcs.get_func(func_ea)
+    if func is None:
         return None
 
     lines = []
-    ea = f.start_ea
+    ea = func.start_ea
+    while ea < func.end_ea:
+        line = ida_lines.generate_disasm_line(ea, 0)
+        line = ida_lines.tag_remove(line)
+        if line == "":
+            line = "/* (failed to disassemble line) */"
 
-    while ea < f.end_ea:
-        line = idc.generate_disasm_line(ea, 0)
-        if line:
-            lines.append(ida_lines.tag_remove(line))
-        ea = idaapi.next_head(ea, f.end_ea)
+        line = f"{line.ljust(120)} // +{hex(ea - func.start_ea)}, {hex(ea)}"
+        lines.append(line)
+
+        ea = ida_bytes.next_head(ea, func.end_ea)
 
     return "\n".join(lines)
 
@@ -111,7 +134,7 @@ def get_xrefs(func_ea):
         caller = ida_funcs.get_func(frm)
 
         if caller:
-            refs.append(f"{ida_funcs.get_func_name(caller.start_ea)} @ {hex(frm)}")
+            refs.append(f"{get_func_name(caller.start_ea)} @ {hex(frm)}")
         else:
             refs.append(f"<???> @ {hex(frm)}")
 
@@ -119,22 +142,30 @@ def get_xrefs(func_ea):
 
 
 func_count = sum(1 for _ in idautils.Functions())
-print(f"!~~{func_count}")
+print_prefixed(json.dumps({
+    "type": "metadata",
+    "func_count": func_count,
+}).replace("\n", "").strip())
 
 for ea in idautils.Functions():
-    f = ida_funcs.get_func(ea)
-    # TODO: return if this is an objc function (and then change file extension)
-    print(f"""
-        !~~{
-            json.dumps({
-                "start": f.start_ea,
-                "end": f.end_ea,
-                "name": ida_funcs.get_func_name(ea),
-                "pseudocode": get_pseudocode(ea),
-                "assembly": get_assembly(ea),
-                "xrefs": get_xrefs(ea),
-            })
-        }
-    """.replace("\n", "").strip())
+    func = ida_funcs.get_func(ea)
 
-idc.qexit(0)
+    demangled = get_func_name(ea)
+
+    is_objc = demangled.startswith("-[") or demangled.startswith("+[")
+
+    print_prefixed(json.dumps({
+        "type": "func",
+
+        "start": func.start_ea,
+        "end": func.end_ea,
+        "name": demangled,
+        "pseudocode": get_pseudocode(ea),
+        "assembly": get_assembly(ea),
+        "xrefs": get_xrefs(ea),
+        "is_objc": is_objc,
+
+        "bida_info": f"{SCRIPT_VERSION} @ {BROMAIDA_GITHUB}"
+    }).replace("\n", "").strip())
+
+ida_pro.qexit(0)
