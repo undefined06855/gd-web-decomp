@@ -21,7 +21,7 @@ An online viewer for Geometry Dash's decompiled source code. Requires IDA Pro to
 1. Create a binaries/ directory, and place your binaries into it (if you are in the Geode SDK server, check [Own The Libs](https://discord.com/channels/911701438269386882/1463361744788525080))
 1. If you are running this headlessly only and have never started IDA before, you may have to provide a virtual X server
     to be able to accept the license agreement!
-1. Run `generate.py`, then wait. Quite a long time. (analysing 10 binaries took around 3 hours on my 5900X)
+1. Run `generate.py`, then wait. Quite a long time. (my 5900X takes around half an hour per binary, so five hours for ten binaries!)
 1. See https://github.com/undefined06855/gd-web-decomp-web for hosting the UI!
 
 (You can also pass names of binaries to analyse individual binaries, for testing, e.g. `python generate.py GeometryJump GeometryDash.exe "Geometry Dash"`)
