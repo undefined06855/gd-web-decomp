@@ -12,10 +12,9 @@ import dotenv
 import humanfriendly
 import tqdm
 
+# 300KB excludes a couple of extremely crazy large functions but includes most of them on at least one platform
 HEXRAYS_CONFIG = """
-
-MAX_FUNCSIZE = 500000
-
+MAX_FUNCSIZE = 300000
 """.strip()
 
 
