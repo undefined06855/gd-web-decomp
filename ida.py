@@ -124,7 +124,7 @@ def get_assembly(func_ea):
         if line == "":
             line = "/* (failed to disassemble line) */"
 
-        line = f"{line.ljust(120)} // +{hex(ea - func.start_ea)}, {hex(ea)}"
+        line = f"{line.ljust(70)} // +{hex(ea - func.start_ea)}, {hex(ea)}"
         lines.append(line)
 
         ea = ida_bytes.next_head(ea, func.end_ea)
