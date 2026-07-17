@@ -12,37 +12,38 @@ import dotenv
 import humanfriendly
 import tqdm
 
-# 200KB excludes a few extremely crazy large functions that just freeze ida
+# 400KB excludes a few extremely crazy large functions that just freeze ida
+# ... for some reason it still freezes ida so ive just removed it
 HEXRAYS_CONFIG = """
-MAX_FUNCSIZE = 200000
+MAX_FUNCSIZE = 400000
 """.strip()
 
 
 # if this returns false the program should exit
 def setup_stuffs() -> bool:
-    user_config_dir = None
-    if os.name == "nt":
-        user_config_dir = pathlib.Path.home() / "AppData/Roaming/Hex-Rays/IDA Pro/cfg"
-    else:
-        user_config_dir = pathlib.Path.home() / ".idapro/cfg"
+    # user_config_dir = None
+    # if os.name == "nt":
+    #     user_config_dir = pathlib.Path.home() / "AppData/Roaming/Hex-Rays/IDA Pro/cfg"
+    # else:
+    #     user_config_dir = pathlib.Path.home() / ".idapro/cfg"
 
-    hexrays_cfg_file = user_config_dir / "hexrays.cfg"
-    if hexrays_cfg_file.exists():
-        with open(hexrays_cfg_file) as config:
-            if config.read() != HEXRAYS_CONFIG:
-                print(f"Your IDA already has a user-local config file at {hexrays_cfg_file.absolute()}!")
-                print(f"Please (re)move this so that custom configs can be loaded.")
-                return False
+    # hexrays_cfg_file = user_config_dir / "hexrays.cfg"
+    # if hexrays_cfg_file.exists():
+    #     with open(hexrays_cfg_file) as config:
+    #         if config.read() != HEXRAYS_CONFIG:
+    #             print(f"Your IDA already has a user-local config file at {hexrays_cfg_file.absolute()}!")
+    #             print(f"Please (re)move this so that custom configs can be loaded.")
+    #             return False
 
-        hexrays_cfg_file.unlink()
+    #     hexrays_cfg_file.unlink()
 
-    user_config_dir.mkdir(parents=True, exist_ok=True)
+    # user_config_dir.mkdir(parents=True, exist_ok=True)
 
-    # write custom config
-    with open(hexrays_cfg_file, "w") as config:
-        config.write(HEXRAYS_CONFIG)
+    # # write custom config
+    # with open(hexrays_cfg_file, "w") as config:
+    #     config.write(HEXRAYS_CONFIG)
 
-    print(f"Written custom config to {hexrays_cfg_file}, you might want to delete this afterwards!")
+    # print(f"Written custom config to {hexrays_cfg_file}, you might want to delete this afterwards!")
 
     # clear any half-complete databases so we dont parse them by accident
     extension_blacklist = [".id0", ".id1", ".id2", ".nam", ".til", ".$$$"]
@@ -60,7 +61,7 @@ def setup_stuffs() -> bool:
     return True
 
 
-def generate_prefix(json_data):
+def generate_prefix(json_data) -> str:
     ret = ""
 
     byte_len = json_data["end"] - json_data["start"]
@@ -150,7 +151,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
         [
             pathlib.Path(os.environ["IDA_DIRECTORY"]).joinpath("idat"),
             "-A",  # autonomous mode
-            # "-c", # re-disassemble
+            "-c", # re-disassemble
             "-Lida.log",  # logfile
             "-v",  # verbose
             # ida.py <cwd> <venv lib path> <invoke bromaida?>
