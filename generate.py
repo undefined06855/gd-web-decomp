@@ -117,16 +117,20 @@ def write_output_files(binary_path: pathlib.Path, json_data):
 
     cpp_path = output_path / (f"{file_safe_name}{".mm" if json_data["is_objc"] else ".cpp"}")
     asm_path = output_path / f"{file_safe_name}.asm"
+    combined_path = output_path / f"{file_safe_name}.json"
 
     with open(cpp_path, "w", encoding="utf-8") as source:
         source.write(generate_prefix(json_data))
         source.write("\n")
         source.write(json_data["pseudocode"])
 
-    with open(asm_path, "w", encoding="utf-8") as source:
-        source.write(generate_prefix(json_data).replace("//", ";"))
-        source.write("\n")
-        source.write(json_data["assembly"])
+    with open(asm_path, "w", encoding="utf-8") as assembly:
+        assembly.write(generate_prefix(json_data).replace("//", ";"))
+        assembly.write("\n")
+        assembly.write(json_data["assembly"])
+
+    with open(combined_path, "w", encoding="utf-8") as combined:
+        combined.write(json.dumps(json_data))
 
     return json_data["name"]
 
