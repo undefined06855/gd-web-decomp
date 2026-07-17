@@ -12,9 +12,9 @@ import dotenv
 import humanfriendly
 import tqdm
 
-# 300KB excludes a couple of extremely crazy large functions but includes most of them on at least one platform
+# 200KB excludes a few extremely crazy large functions that just freeze ida
 HEXRAYS_CONFIG = """
-MAX_FUNCSIZE = 300000
+MAX_FUNCSIZE = 200000
 """.strip()
 
 
@@ -118,14 +118,13 @@ def write_output_files(binary_path: pathlib.Path, json_data):
     asm_path = output_path / f"{file_safe_name}.asm"
     combined_path = output_path / f"{file_safe_name}.json"
 
+    json_data["pseudocode"] = f"{generate_prefix(json_data)}\n{json_data["pseudocode"]}"
+    json_data["assembly"] = f"{generate_prefix(json_data).replace("//", ";")}\n{json_data["assembly"]}"
+
     with open(cpp_path, "w", encoding="utf-8") as source:
-        source.write(generate_prefix(json_data))
-        source.write("\n")
         source.write(json_data["pseudocode"])
 
     with open(asm_path, "w", encoding="utf-8") as assembly:
-        assembly.write(generate_prefix(json_data).replace("//", ";"))
-        assembly.write("\n")
         assembly.write(json_data["assembly"])
 
     with open(combined_path, "w", encoding="utf-8") as combined:
