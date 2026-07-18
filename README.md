@@ -1,6 +1,8 @@
 # GD Web Decomp
 
-An online viewer for Geometry Dash's decompiled source code. Requires IDA Pro to run.
+A generator for Geometry Dash's decompiled source code! Requires IDA Pro to generate.
+
+See [undefined06855/gd-web-decomp-web](https://github.com/undefined06855/gd-web-decomp-web) for the [web interface](https://gd-src.undefined0.dev/)!
 
 ## Setup
 
