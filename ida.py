@@ -1,15 +1,32 @@
-import io
-import os
-import pathlib
-import sys
-import zipfile
-
 import idc
-import requests
+import pathlib
 
 cwd = pathlib.Path(idc.ARGV[1])
 sys.path.insert(0, idc.ARGV[2])
 should_invoke_bromaida = idc.ARGV[3] == "True"
+
+import io
+import json
+import os
+import subprocess
+import sys
+import time
+import zipfile
+
+import dotenv
+import ida_auto
+import ida_bytes
+import ida_funcs
+import ida_hexrays
+import ida_ida
+import ida_idp
+import ida_lines
+import ida_name
+import ida_pro
+import idautils
+import requests
+
+
 
 
 def print_prefixed(message):
@@ -20,9 +37,7 @@ bida_path = cwd / "./bromaida"
 if not bida_path.exists():
     print_prefixed(f">Extracting BromaIDA from {os.environ["BROMA_IDA_REPO"]}@{os.environ["BROMA_IDA_BRANCH"]}...")
 
-    res = requests.get(
-        f"https://github.com/{os.environ["BROMA_IDA_REPO"]}/archive/refs/heads/{os.environ["BROMA_IDA_BRANCH"]}.zip"
-    )
+    res = requests.get(f"https://github.com/{os.environ["BROMA_IDA_REPO"]}/archive/refs/heads/{os.environ["BROMA_IDA_BRANCH"]}.zip")
     res.raise_for_status()
 
     bida_path.mkdir(exist_ok=True)
@@ -40,19 +55,6 @@ if not bida_path.exists():
 
 sys.path.insert(0, str(bida_path.absolute()))
 
-import json
-
-import dotenv
-import ida_auto
-import ida_bytes
-import ida_funcs
-import ida_hexrays
-import ida_ida
-import ida_idp
-import ida_lines
-import ida_name
-import ida_pro
-import idautils
 from broma_ida.broma.importer import BromaImporter
 from broma_ida.data.data_manager import DataManager
 from broma_ida.metadata import BROMAIDA_GITHUB, SCRIPT_VERSION
@@ -85,6 +87,9 @@ if should_invoke_bromaida:
 else:
     print_prefixed(">Skipping BromaIDA for this file...")
 
+bindings_commit_hash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=pathlib.Path(os.environ["BINDINGS_PATH"])).strip().decode()
+bindings_commit_time = time.ctime(int(subprocess.check_output(["git", "log", "-1", "--date=short", "--pretty=format:%ct"], cwd=pathlib.Path(os.environ["BINDINGS_PATH"]))))
+bindings_remote = subprocess.check_output(["git", "remote", "get-url", "origin"], cwd=pathlib.Path(os.environ["BINDINGS_PATH"])).strip().decode()
 
 def get_func_name(func_ea):
     maybe_mangled = ida_funcs.get_func_name(func_ea)
@@ -93,8 +98,7 @@ def get_func_name(func_ea):
     if demangled is None:
         demangled = maybe_mangled
     else:
-        # remove params that demangle_name gives us (only android will go down this route since it gives us mangled
-        # names)
+        # remove params that demangle_name gives us (only android will go down this route since it gives us mangled names)
         demangled = demangled.split("(", 1)[0]
 
     return demangled
@@ -183,6 +187,7 @@ for ea in idautils.Functions():
                 "is_arm32": ida_idp.get_idp_name() == "ARM" and ida_ida.inf_is_32bit_exactly(),
                 "is_arm64": ida_idp.get_idp_name() == "ARM" and ida_ida.inf_is_64bit(),
                 "bida_info": f"{SCRIPT_VERSION} @ {BROMAIDA_GITHUB}",
+                "bindings_info": f"commit {bindings_commit_hash} at {bindings_commit_time} from {bindings_remote}",
             }
         )
         .replace("\n", "")

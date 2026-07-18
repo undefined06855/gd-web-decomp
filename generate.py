@@ -92,6 +92,7 @@ def generate_prefix(json_data) -> str:
     ret += "// \n"
 
     ret += f"// Using BromaIDA {json_data["bida_info"]}\n"
+    ret += f"// Using bindings at {json_data["bindings_info"]}\n"
 
     ret += "// \n"
 

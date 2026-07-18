@@ -34,7 +34,7 @@ Install development packages by running `pip install -r requirements_dev.txt`
 
 Before committing, make sure to run
 ```
-black . -t py314 -l 120
+black . -t py314 -l 180
 isort .
 ```
 
