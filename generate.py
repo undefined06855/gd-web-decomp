@@ -78,17 +78,16 @@ def generate_prefix(json_data) -> str:
 
     ret += "// \n"
 
-    # TODO: make this better
-    unhookable = False
-    if byte_len < 16:
-        ret += "// This function may be unhookable on ARM64!! (size < 16)\n"
-        unhookable = True
-    if byte_len < 8:
-        ret += "// This function may be unhookable on ARM32!! (size < 8)\n"
-        unhookable = True
+    hookable = True
+    if byte_len < 16 and json_data["is_arm64"]:
+        ret += "// This function is unhookable on this platform!! (ARM64 and size < 16)\n"
+        hookable = False
+    if byte_len < 8 and json_data["is_arm32"]:
+        ret += "// This function is unhookable on this platform!! (ARM32 and size < 8)\n"
+        hookable = False
 
-    if not unhookable:
-        ret += "// This function is hookable on all platforms!\n"
+    if hookable:
+        ret += "// This function is hookable on this platform!\n"
 
     ret += "// \n"
 
@@ -151,7 +150,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
         [
             pathlib.Path(os.environ["IDA_DIRECTORY"]).joinpath("idat"),
             "-A",  # autonomous mode
-            "-c", # re-disassemble
+            "-c",  # re-disassemble
             "-Lida.log",  # logfile
             "-v",  # verbose
             # ida.py <cwd> <venv lib path> <invoke bromaida?>

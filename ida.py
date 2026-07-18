@@ -47,6 +47,8 @@ import ida_auto
 import ida_bytes
 import ida_funcs
 import ida_hexrays
+import ida_ida
+import ida_idp
 import ida_lines
 import ida_name
 import ida_pro
@@ -178,6 +180,8 @@ for ea in idautils.Functions():
                 "assembly": get_assembly(ea),
                 "xrefs": get_xrefs(ea),
                 "is_objc": is_objc,
+                "is_arm32": ida_idp.get_idp_name() == "ARM" and ida_ida.inf_is_32bit_exactly(),
+                "is_arm64": ida_idp.get_idp_name() == "ARM" and ida_ida.inf_is_64bit(),
                 "bida_info": f"{SCRIPT_VERSION} @ {BROMAIDA_GITHUB}",
             }
         )
