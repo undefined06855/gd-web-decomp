@@ -194,4 +194,14 @@ for ea in idautils.Functions():
         .strip()
     )
 
+print_prefixed(
+    json.dumps(
+        {
+            "type": "end",
+        }
+    )
+    .replace("\n", "")
+    .strip()
+)
+
 ida_pro.qexit(0)

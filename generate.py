@@ -199,6 +199,16 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
 
                 pbar.set_description(bar_description)  # not really what this is meant for but it works
                 pbar.update()
+                continue
+
+            if line_data["type"] == "end":
+                print("Done!")
+
+                if pbar:
+                    pbar.set_description(f"Parsing {path.name}")
+                    pbar.close()
+
+                break
         except Exception as err:
             print(f"Failed to parse {line[:30]}...")
             print(err)
@@ -212,10 +222,6 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
             return False
 
     process.wait()
-
-    if pbar:
-        pbar.set_description(f"Parsing {path.name}")
-        pbar.close()
 
     return True
 
