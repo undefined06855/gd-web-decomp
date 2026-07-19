@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import sysconfig
+import select
 import time
 
 import dotenv
@@ -57,6 +58,10 @@ def setup_stuffs() -> bool:
     # clear ida log
     with open(pathlib.Path("./ida.log"), "w") as log:
         log.write("")
+
+    # select.select says: "On Windows, only sockets are supported; on Unix, all file descriptors can be used."
+    if os.name == "nt":
+        print("Since you are on Windows, if the idat process hangs, this script will not detect that! Switch to a non-Windows OS for an automatic timeout.")
 
     return True
 
@@ -169,8 +174,28 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
         return False
 
     pbar: tqdm.tqdm | None = None
+    is_eof = False
 
-    for line in process.stdout:
+    # if it takes more than two minutes to analyse a function something is prooobably wrong
+    function_timeout = 120
+
+    while not is_eof:
+        if os.name != "nt":
+            read_ready, _, _ = select.select([process.stdout], [], [], function_timeout)
+
+            if len(read_ready) == 0:
+                print(f"Timed out after {function_timeout} seconds!")
+                process.kill()
+                if pbar:
+                    pbar.close()
+
+                return False
+
+        line = process.stdout.readline()
+        if line == "":
+            is_eof = True
+            break
+
         line = line.strip()
         if not line.startswith("[gdwd]"):
             continue
@@ -199,6 +224,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
 
                 pbar.set_description(bar_description)  # not really what this is meant for but it works
                 pbar.update()
+                continue
         except Exception as err:
             print(f"Failed to parse {line[:30]}...")
             print(err)
