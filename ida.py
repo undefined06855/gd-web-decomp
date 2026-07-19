@@ -166,8 +166,6 @@ print_prefixed(
     .strip()
 )
 
-time.sleep(9999)
-
 for ea in idautils.Functions():
     func = ida_funcs.get_func(ea)
 
