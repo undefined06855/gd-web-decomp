@@ -202,11 +202,11 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
                 continue
 
             if line_data["type"] == "end":
-                print("Done!")
-
                 if pbar:
                     pbar.set_description(f"Parsing {path.name}")
                     pbar.close()
+
+                print("Done!")
 
                 break
         except Exception as err:
