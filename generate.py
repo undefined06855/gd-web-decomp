@@ -174,11 +174,12 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
         return False
 
     pbar: tqdm.tqdm | None = None
+    is_eof = False
 
     # if it takes more than two minutes to analyse a function something is prooobably wrong
     function_timeout = 120
 
-    while True:
+    while not is_eof:
         if os.name != "nt":
             read_ready, _, _ = select.select([process.stdout], [], [], function_timeout)
 
@@ -192,6 +193,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
 
         line = process.stdout.readline()
         if line == "":
+            is_eof = True
             break
 
         line = line.strip()
