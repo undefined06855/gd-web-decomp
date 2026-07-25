@@ -120,7 +120,9 @@ def write_output_files(binary_path: pathlib.Path, json_data):
     combined_path = output_path / f"{file_safe_name}.json"
 
     json_data["pseudocode"] = f"{generate_prefix(json_data)}\n{json_data["pseudocode"]}"
-    json_data["assembly"] = f"{generate_prefix(json_data).replace("//", ";")}\n{json_data["assembly"]}"
+
+    assembly_prefix = "\n".join(line.replace("//", ";", count=1) for line in generate_prefix(json_data).splitlines())
+    json_data["assembly"] = f"{assembly_prefix}\n{json_data["assembly"]}"
 
     with open(cpp_path, "w", encoding="utf-8") as source:
         source.write(json_data["pseudocode"])
