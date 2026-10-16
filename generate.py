@@ -79,24 +79,38 @@ def generate_prefix(json_data) -> str:
     ret += "// \n"
 
     hookable = True
-    if byte_len < 16 and json_data["is_arm64"]:
+    if byte_len < 16 and json_data["is_64_bit"] and json_data["idp_name"] == "ARM":
         ret += "// This function is unhookable on this platform!! (ARM64 and size < 16)\n"
         hookable = False
-    if byte_len < 8 and json_data["is_arm32"]:
+    if byte_len < 8 and json_data["is_32_bit"] and json_data["idp_name"] == "ARM":
         ret += "// This function is unhookable on this platform!! (ARM32 and size < 8)\n"
         hookable = False
 
     if hookable:
-        ret += "// This function is hookable on this platform!\n"
+        ret += f"// This function is hookable on this platform (idp: {json_data["idp_name"]}, 32 bit: {json_data["is_32_bit"]}, 64 bit: {json_data["is_64_bit"]}!\n"
 
     ret += "// \n"
 
     ret += f"// Using BromaIDA {json_data["bida_info"]}\n"
     ret += f"// Using bindings at {json_data["bindings_info"]}\n"
+    ret += f"// Generated at {time.strftime("%a, %d %b %Y %X +0000", time.gmtime())}\n"
 
     ret += "// \n"
 
     return ret
+
+
+def auto_rename_path(path: pathlib.Path) -> pathlib.Path:
+    if not path.exists():
+        return path
+
+    output = path.with_name(path.name + "_1")
+    i = 2
+    while output.exists():
+        output = output.with_name(output.name + f"_{i}")
+        i += 1
+
+    return output
 
 
 def write_output_files(binary_path: pathlib.Path, json_data):
@@ -112,12 +126,20 @@ def write_output_files(binary_path: pathlib.Path, json_data):
     if file_safe_name.endswith("operator*"):
         file_safe_name = file_safe_name[:-9] + "operator_mul"
 
+    if file_safe_name.endswith("operator<"):
+        file_safe_name = file_safe_name[:-9] + "operator_lt"
+
+    if file_safe_name.endswith("operator<"):
+        file_safe_name = file_safe_name[:-9] + "operator_gt"
+
+    file_safe_name.replace("~", "d")
+
     file_safe_name = re.sub(r"[?@:<>,*&~]", "_", file_safe_name)
     file_safe_name = file_safe_name[:100]
 
-    cpp_path = output_path / (f"{file_safe_name}{".mm" if json_data["is_objc"] else ".cpp"}")
-    asm_path = output_path / f"{file_safe_name}.asm"
-    combined_path = output_path / f"{file_safe_name}.json"
+    cpp_path = auto_rename_path(output_path / (f"{file_safe_name}{".mm" if json_data["is_objc"] else ".cpp"}"))
+    asm_path = auto_rename_path(output_path / f"{file_safe_name}.asm")
+    combined_path = auto_rename_path(output_path / "data" / f"{file_safe_name}.json")
 
     json_data["pseudocode"] = f"{generate_prefix(json_data)}\n{json_data["pseudocode"]}"
 
@@ -156,6 +178,7 @@ def run_for_one_binary(path: pathlib.Path) -> bool:
             "-c",  # re-disassemble
             "-Lida.log",  # logfile
             "-v",  # verbose
+            "-P+",  # compress db (there you go prevter)
             # ida.py <cwd> <venv lib path> <invoke bromaida?>
             f'-S"{pathlib.Path("./ida.py").absolute()}" "{pathlib.Path("./").absolute()}" "{pathlib.Path(sysconfig.get_path("purelib")).absolute()}" "{"True" if invoke_bromaida else "False"}"',  # launch script
             f"{path.absolute()}",

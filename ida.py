@@ -1,5 +1,6 @@
-import idc
 import pathlib
+
+import idc
 
 cwd = pathlib.Path(idc.ARGV[1])
 sys.path.insert(0, idc.ARGV[2])
@@ -25,8 +26,6 @@ import ida_name
 import ida_pro
 import idautils
 import requests
-
-
 
 
 def print_prefixed(message):
@@ -90,6 +89,7 @@ else:
 bindings_commit_hash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=pathlib.Path(os.environ["BINDINGS_PATH"])).strip().decode()
 bindings_commit_time = time.ctime(int(subprocess.check_output(["git", "log", "-1", "--date=short", "--pretty=format:%ct"], cwd=pathlib.Path(os.environ["BINDINGS_PATH"]))))
 bindings_remote = subprocess.check_output(["git", "remote", "get-url", "origin"], cwd=pathlib.Path(os.environ["BINDINGS_PATH"])).strip().decode()
+
 
 def get_func_name(func_ea):
     maybe_mangled = ida_funcs.get_func_name(func_ea)
@@ -184,8 +184,9 @@ for ea in idautils.Functions():
                 "assembly": get_assembly(ea),
                 "xrefs": get_xrefs(ea),
                 "is_objc": is_objc,
-                "is_arm32": ida_idp.get_idp_name() == "ARM" and ida_ida.inf_is_32bit_exactly(),
-                "is_arm64": ida_idp.get_idp_name() == "ARM" and ida_ida.inf_is_64bit(),
+                "is_32_bit": ida_ida.inf_is_32bit_exactly(),
+                "is_64_bit": ida_ida.inf_is_64bit(),
+                "idp_name": ida_idp.get_idp_name(),
                 "bida_info": f"{SCRIPT_VERSION} @ {BROMAIDA_GITHUB}",
                 "bindings_info": f"commit {bindings_commit_hash} at {bindings_commit_time} from {bindings_remote}",
             }

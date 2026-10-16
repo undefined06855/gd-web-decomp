@@ -1,5 +1,5 @@
 python-dotenv
 requests
-git+https://github.com/Prevter/PyBroma.git
+git+https://github.com/Prevter/PyBroma.git@v0.4.0
 tqdm
 humanfriendly

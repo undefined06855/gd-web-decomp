@@ -17,10 +17,10 @@ See [undefined06855/gd-web-decomp-web](https://github.com/undefined06855/gd-web-
     IDA_DIRECTORY=/path/to/ida
     BROMA_IDA_REPO=Stazzical/BromaIDA
     BROMA_IDA_BRANCH=master
-    BINDINGS_PATH=/your/bindings/directory/bindings/2.2081
+    BINDINGS_PATH=/your/bindings/directory/bindings/2.209
     ```
     (or just set the environment variables)
-1. Create a binaries/ directory, and place your binaries into it (if you are in the Geode SDK server, check [Own The Libs](https://discord.com/channels/911701438269386882/1463361744788525080))
+1. Create a binaries/ directory, and place your binaries into it (if you are in the Geode SDK server, check [Own The Libs](https://discord.com/channels/911701438269386882/1560412524472700991))
 1. If you are running this headlessly only and have never started IDA before, you may have to provide a virtual X server
     to be able to accept the license agreement!
 1. Run `generate.py`, then wait. Quite a long time.
