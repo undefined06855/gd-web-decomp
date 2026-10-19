@@ -80,7 +80,7 @@ if should_invoke_bromaida:
 
     # usage also taken from bromaida
     print_prefixed(">Invoking BromaImporter...")
-    broma_importer = BromaImporter(IDAUtils.get_platform(), pathlib.Path(os.environ["BINDINGS_PATH"]))
+    broma_importer = BromaImporter(IDAUtils.get_platform(), pathlib.Path(os.environ["BINDINGS_PATH"])) # TODO: this is now incorrect, pass the .bro file directly
     broma_importer.parse_bromas()
     broma_importer.import_into_idb()
 else:
